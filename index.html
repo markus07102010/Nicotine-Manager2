@@ -1,0 +1,1650 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+<title>NicotineManager</title>
+
+<!-- PWA -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0B0F14">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="NicotineMgr">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<link rel="icon" href="icons/favicon.png">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="config.js"></script>
+<style>
+/* ════════════════════════════════════════════════════════
+   TOKENS
+   ════════════════════════════════════════════════════════ */
+:root{
+  --paper:#0B0F14;
+  --paper2:#121821;
+  --paper3:#19212C;
+  --line:#232E3A;
+  --line2:#34455A;
+  --ink:#EAF0F5;
+  --ink-soft:#8FA0AF;
+  --ink-faint:#566778;
+  --sage:#4C8DFF;
+  --sage-deep:#8FB6FF;
+  --sage-bg:#162338;
+  --accent2:#D4AC5C;
+  --accent3:#7DD3C8;
+  --accent4:#C792EA;
+  --rust:#E08A6B;
+  --rust-bg:#2E2019;
+  --gold:#D4AC5C;
+  --gold-bg:#2B2418;
+  --r:3px;
+  --r-lg:6px;
+  --nav-h:64px;
+  --scale-h:46px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{
+  background:var(--paper);
+  color:var(--ink);
+  font-family:'Inter',system-ui,sans-serif;
+  font-size:14px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior-y:none;
+}
+button,.scale-tick,.ic-btn,input[type="checkbox"]+.tt{touch-action:manipulation}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-thumb{background:var(--line2);border-radius:99px}
+::selection{background:var(--sage-bg);color:var(--sage-deep)}
+
+h1,h2,h3,h4{font-family:'Fraunces',serif;font-weight:600;letter-spacing:-.01em}
+
+.mono{font-family:'JetBrains Mono',monospace}
+
+input,select,textarea{
+  background:var(--paper);
+  border:1px solid var(--line2);
+  border-radius:var(--r);
+  padding:10px 12px;
+  color:var(--ink);
+  font-family:'Inter',sans-serif;
+  font-size:13px;
+  outline:none;
+  width:100%;
+  transition:border-color .15s, box-shadow .15s;
+}
+input:focus,select:focus,textarea:focus{border-color:var(--sage);box-shadow:0 0 0 3px color-mix(in srgb, var(--sage) 22%, transparent)}
+input::placeholder,textarea::placeholder{color:var(--ink-faint)}
+select{
+  cursor:pointer;appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%235C6660' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;padding-right:32px;
+}
+label.fl{display:block;font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;font-family:'JetBrains Mono',monospace}
+
+button{font-family:inherit;cursor:pointer}
+
+/* ════════════════════════════════════════════════════════
+   LOGIN
+   ════════════════════════════════════════════════════════ */
+#login-screen{
+  display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:var(--paper);
+  background-image:
+    repeating-linear-gradient(to bottom, transparent, transparent 39px, var(--line) 39px, var(--line) 40px);
+  background-size:100% 200px;
+  padding:20px;
+}
+.login-wrap{width:100%;max-width:380px}
+.login-label{
+  font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:600;color:var(--sage);
+  text-transform:uppercase;letter-spacing:.14em;text-align:center;margin-bottom:10px;
+}
+.login-brand{text-align:center;margin-bottom:30px}
+.login-brand h1{font-size:34px;color:var(--ink);line-height:1}
+.login-brand .sub{color:var(--ink-soft);font-size:13px;margin-top:8px;font-family:'JetBrains Mono',monospace;letter-spacing:.02em}
+.login-card{
+  background:var(--paper2);
+  border:1px solid var(--line2);
+  border-radius:var(--r-lg);
+  padding:26px;
+  position:relative;
+}
+.login-card::before{
+  content:'';position:absolute;top:0;left:24px;right:24px;height:1px;background:var(--line2);
+}
+.fw{margin-bottom:16px}
+.primary-btn{
+  width:100%;background:var(--sage-deep);color:var(--paper);border:none;border-radius:99px;
+  padding:13px;font-size:13px;font-weight:600;letter-spacing:.02em;margin-top:6px;
+  transition:filter .15s;font-family:'Inter',sans-serif;
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  box-shadow:0 2px 8px -2px color-mix(in srgb, var(--sage) 50%, transparent);
+}
+.primary-btn:hover{filter:brightness(1.1)}
+.login-err{
+  color:var(--rust);font-size:12px;margin-top:12px;text-align:center;display:none;
+  background:var(--rust-bg);border-radius:var(--r);padding:9px 12px;font-family:'JetBrains Mono',monospace;
+}
+.login-hint{text-align:center;margin-top:16px;font-size:11px;color:var(--ink-faint);font-family:'JetBrains Mono',monospace}
+.login-hint b{color:var(--ink-soft)}
+
+/* ════════════════════════════════════════════════════════
+   APP SHELL
+   ════════════════════════════════════════════════════════ */
+#app-screen{display:none;min-height:100vh}
+
+/* Top brand bar */
+.topbrand{
+  height:calc(var(--nav-h) + env(safe-area-inset-top));
+  padding-top:env(safe-area-inset-top);
+  border-bottom:1px solid var(--line2);
+  background:var(--paper);
+  display:flex;align-items:center;justify-content:space-between;
+  padding-left:24px;padding-right:24px;position:sticky;top:0;z-index:40;
+}
+.tb-left{display:flex;align-items:center;gap:14px}
+.tb-mark{
+  width:34px;height:34px;border-radius:50%;border:2px solid var(--ink);
+  display:flex;align-items:center;justify-content:center;
+  font-family:'Fraunces',serif;font-weight:700;font-size:15px;flex-shrink:0;
+}
+.tb-name{font-family:'Fraunces',serif;font-weight:600;font-size:17px;letter-spacing:-.01em}
+.tb-name span{color:var(--sage)}
+.tb-right{display:flex;align-items:center;gap:14px}
+.tb-user{display:flex;align-items:center;gap:9px}
+.tb-user-info{text-align:right;line-height:1.25}
+.tb-user-name{font-size:12px;font-weight:600}
+.tb-user-role{font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;font-family:'JetBrains Mono',monospace}
+.tb-av{
+  width:30px;height:30px;border-radius:50%;background:var(--sage-bg);color:var(--sage-deep);
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;
+  font-family:'JetBrains Mono',monospace;
+}
+.logout-btn{
+  background:none;border:1px solid var(--line2);color:var(--ink-soft);border-radius:var(--r);
+  padding:8px 12px;font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;
+  transition:all .15s;letter-spacing:.03em;
+}
+.logout-btn:hover{border-color:var(--rust);color:var(--rust);background:var(--rust-bg)}
+
+/* Scale navigation — signature element */
+.scalebar{
+  height:var(--scale-h);
+  background:var(--paper2);
+  border-bottom:1px solid var(--line2);
+  display:flex;align-items:stretch;
+  position:sticky;top:calc(var(--nav-h) + env(safe-area-inset-top));z-index:39;
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.scalebar::-webkit-scrollbar{display:none}
+.scale-tick{
+  position:relative;display:flex;align-items:center;gap:8px;
+  padding:0 20px;cursor:pointer;color:var(--ink-soft);font-size:12px;font-weight:600;
+  border-right:1px solid var(--line);white-space:nowrap;flex-shrink:0;
+  transition:color .15s,background .15s;
+}
+.scale-tick:hover{color:var(--ink);background:var(--paper3)}
+.scale-tick .tk-ic{font-size:13px;opacity:.7}
+.scale-tick .tk-n{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--ink-faint)}
+.scale-tick.active{color:var(--sage-deep);background:var(--paper)}
+.scale-tick.active::after{
+  content:'';position:absolute;left:0;right:0;bottom:0;height:2px;background:var(--sage-deep);
+}
+.scale-tick.active .tk-n{color:var(--sage)}
+
+.main{max-width:1180px;margin:0 auto;padding:36px 28px 60px}
+.page{display:none}
+.page.active{display:block;animation:fade .25s ease both}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* ════════════════════════════════════════════════════════
+   PAGE HEADER — label-style, like a pharmacy datasheet header
+   ════════════════════════════════════════════════════════ */
+.ph{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:28px;padding-bottom:18px;border-bottom:1px solid var(--line2)}
+.ph-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--sage);text-transform:uppercase;letter-spacing:.12em;margin-bottom:6px}
+.pt{font-size:26px;font-weight:600;letter-spacing:-.02em}
+.ps{color:var(--ink-soft);font-size:13px;margin-top:4px}
+.pa{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+
+/* ════════════════════════════════════════════════════════
+   BUTTONS
+   ════════════════════════════════════════════════════════ */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:10px 16px;border-radius:var(--r);
+  font-size:12px;font-weight:600;border:none;transition:all .15s;white-space:nowrap;
+  font-family:'Inter',sans-serif;letter-spacing:.01em;
+}
+.btn-ghost{background:transparent;border:1px solid var(--line2);color:var(--ink-soft)}
+.btn-ghost:hover{border-color:var(--ink);color:var(--ink)}
+.btn-primary{background:var(--sage-deep);color:var(--paper);box-shadow:0 2px 8px -2px color-mix(in srgb, var(--sage) 50%, transparent);border-radius:99px;padding:10px 20px}
+.btn-primary:hover{filter:brightness(1.1)}
+.btn-danger{background:var(--rust-bg);border:1px solid #4A3528;color:var(--rust);border-radius:var(--r-lg)}
+.btn-danger:hover{background:var(--rust);color:var(--paper)}
+.btn-sm{padding:7px 12px;font-size:11px}
+.btn-sm.btn-primary{padding:7px 16px}
+.ic-btn{background:none;border:none;cursor:pointer;padding:6px;border-radius:50%;color:var(--ink-faint);transition:all .12s;font-size:13px;min-width:32px;min-height:32px;display:inline-flex;align-items:center;justify-content:center}
+.ic-btn:hover{background:var(--rust-bg);color:var(--rust)}
+.pay-btn{
+  background:var(--sage-bg);border:1px solid color-mix(in srgb, var(--sage) 35%, transparent);color:var(--sage-deep);padding:5px 12px;
+  border-radius:99px;font-size:10px;font-weight:700;font-family:'JetBrains Mono',monospace;
+  letter-spacing:.03em;transition:all .15s;white-space:nowrap;
+}
+.pay-btn:hover{background:var(--sage-deep);color:var(--paper)}
+
+/* ════════════════════════════════════════════════════════
+   DOSAGE SCALE — signature data visualization
+   ════════════════════════════════════════════════════════ */
+.dose-card{
+  background:var(--paper2);border:1px solid var(--line2);border-radius:var(--r-lg);
+  padding:22px 24px;margin-bottom:24px;
+  box-shadow:0 8px 20px -10px rgba(0,0,0,.5);
+}
+.dose-row{margin-bottom:14px}
+.dose-label{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.1em;margin-bottom:10px}
+.dose-vals{display:flex;gap:18px;flex-wrap:wrap;font-family:'JetBrains Mono',monospace;font-size:12px}
+.dose-vals span{font-weight:700;display:flex;align-items:center;gap:6px}
+.dose-vals span::before{content:'';width:8px;height:8px;border-radius:50%;background:currentColor;display:inline-block}
+.dose-track{position:relative;height:14px;background:var(--paper3);border-radius:99px;overflow:hidden;border:1px solid var(--line2)}
+.dose-fill-seg{position:absolute;top:0;bottom:0;transition:width .5s ease,left .5s ease}
+.dose-ticks{display:flex;justify-content:space-between;margin-top:6px}
+.dose-ticks span{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-faint)}
+
+/* ════════════════════════════════════════════════════════
+   STAT LABELS — pharmacy datasheet style, replaces stat cards
+   ════════════════════════════════════════════════════════ */
+.stat-strip{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-bottom:28px;border:1px solid var(--line2);border-radius:var(--r-lg);overflow:hidden;
+  box-shadow:0 8px 20px -10px rgba(0,0,0,.5);
+}
+.stat-cell{padding:18px 20px;border-right:1px solid var(--line2);background:var(--paper2);transition:background .15s}
+.stat-cell:hover{background:var(--paper3)}
+.stat-cell:last-child{border-right:none}
+.stat-cell .sc-lab{font-family:'JetBrains Mono',monospace;font-size:9px;font-weight:600;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.stat-cell .sc-v{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;letter-spacing:-.02em}
+.stat-cell.s-debt .sc-v{color:var(--rust)}
+.stat-cell .sc-sub{font-size:10px;color:var(--ink-faint);margin-top:4px}
+
+/* ════════════════════════════════════════════════════════
+   CARD / LABEL CARD — looks like a product/specimen label
+   ════════════════════════════════════════════════════════ */
+.card{
+  background:var(--paper2);border:1px solid var(--line2);border-radius:var(--r-lg);margin-bottom:20px;
+  box-shadow:0 1px 0 rgba(255,255,255,.02) inset, 0 8px 20px -10px rgba(0,0,0,.5);
+}
+.card-head{
+  display:flex;align-items:center;justify-content:space-between;padding:16px 20px;
+  border-bottom:1px solid var(--line);
+}
+.card-head h3{font-size:14px;font-weight:600;font-family:'Inter',sans-serif;letter-spacing:0}
+.badge{
+  font-size:9px;font-weight:700;padding:3px 9px;border-radius:99px;font-family:'JetBrains Mono',monospace;
+  text-transform:uppercase;letter-spacing:.05em;
+}
+.b-offen{background:var(--rust-bg);color:var(--rust)}
+.b-bezahlt{background:var(--sage-bg);color:var(--sage-deep)}
+
+.tbl-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th{
+  text-align:left;padding:11px 20px;font-size:9px;font-weight:600;color:var(--ink-faint);
+  text-transform:uppercase;letter-spacing:.08em;border-bottom:1px solid var(--line);font-family:'JetBrains Mono',monospace;
+  background:var(--paper3);
+}
+td{padding:13px 20px;font-size:13px;border-bottom:1px solid var(--line)}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--paper3)}
+.ec{text-align:center;padding:48px 20px;color:var(--ink-faint)}
+.ec-ic{font-size:30px;margin-bottom:10px;opacity:.5}
+.ec-t{font-size:13px;font-weight:600;color:var(--ink-soft);margin-bottom:3px}
+.ec-s{font-size:12px}
+
+/* ════════════════════════════════════════════════════════
+   PRODUCT GRID (Preise)
+   ════════════════════════════════════════════════════════ */
+.pg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px}
+.pc{background:var(--paper);border:1px solid var(--line2);border-radius:var(--r-lg);padding:18px;position:relative}
+.pc-eyebrow{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.pc-name{font-size:14px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:14px}
+.pc-ic{font-size:16px}
+.pc-val{font-family:'JetBrains Mono',monospace;font-size:24px;font-weight:700;color:var(--sage-deep);margin-bottom:12px}
+.pc-edit{display:flex;gap:8px}
+.pc-edit input{flex:1}
+
+/* ════════════════════════════════════════════════════════
+   KUNDEN GRID
+   ════════════════════════════════════════════════════════ */
+.kg{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.kcard{background:var(--paper);border:1px solid var(--line2);border-radius:var(--r-lg);padding:18px;position:relative}
+.kc-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.kc-name{font-weight:600;font-size:14px}
+.kc-stats{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.kc-stat-lab{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--ink-faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+.kc-stat-v{font-family:'JetBrains Mono',monospace;font-size:14px;font-weight:700}
+.kc-stat-v.debt{color:var(--rust)}
+
+/* ════════════════════════════════════════════════════════
+   SETTINGS
+   ════════════════════════════════════════════════════════ */
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.sg.full{grid-template-columns:1fr}
+.set-card{background:var(--paper);border:1px solid var(--line2);border-radius:var(--r-lg);overflow:hidden}
+.sch{display:flex;align-items:center;gap:12px;padding:16px 20px;border-bottom:1px solid var(--line)}
+.sch-ic{width:30px;height:30px;border-radius:50%;background:var(--sage-bg);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.sch h3{font-size:13px;font-weight:600;font-family:'Inter',sans-serif}
+.sch p{font-size:11px;color:var(--ink-faint);margin-top:1px}
+.scb{padding:18px 20px}
+.sr{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.sr:last-child{border-bottom:none}
+.sr-label{font-size:12px;font-weight:600}
+.sr-sub{font-size:11px;color:var(--ink-faint);margin-top:1px}
+.toggle{position:relative;display:inline-block;width:38px;height:21px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tt{position:absolute;cursor:pointer;inset:0;background:var(--line2);border-radius:99px;transition:.2s}
+.tt::before{content:'';position:absolute;width:15px;height:15px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.toggle input:checked+.tt{background:var(--sage-deep)}
+.toggle input:checked+.tt::before{transform:translateX(17px)}
+.mr2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.about-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line);font-size:12px}
+.about-row:last-child{border-bottom:none}
+.about-row span:first-child{color:var(--ink-faint);font-family:'JetBrains Mono',monospace;font-size:11px}
+.about-row span:last-child{font-weight:600}
+
+.ul-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+.ul-item:last-child{border-bottom:none}
+.ul-av{width:28px;height:28px;border-radius:50%;background:var(--sage-bg);color:var(--sage-deep);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.ul-info{flex:1;min-width:0}
+.ul-name{font-size:12px;font-weight:600}
+.ul-role{font-size:10px;color:var(--ink-faint);font-family:'JetBrains Mono',monospace}
+
+.danger-zone{border:1px solid #4A3528;background:var(--rust-bg);border-radius:var(--r-lg);padding:20px}
+.danger-zone h3{color:var(--rust);font-size:13px;font-weight:700;margin-bottom:5px;font-family:'Inter',sans-serif}
+.danger-zone p{font-size:12px;color:var(--ink-soft);margin-bottom:14px}
+.danger-actions{display:flex;gap:10px;flex-wrap:wrap}
+
+.theme-grid{display:flex;gap:8px}
+.t-d{width:22px;height:22px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.15s}
+.t-d.on{border-color:var(--ink)}
+
+/* ════════════════════════════════════════════════════════
+   SERVICE PAGE
+   ════════════════════════════════════════════════════════ */
+.service-banner{
+  background:var(--rust-bg);border:1px solid #4A3528;border-radius:var(--r-lg);
+  padding:16px 20px;display:flex;align-items:center;gap:14px;margin-bottom:24px;
+}
+.service-banner .sb-left{font-size:22px}
+.service-banner h4{color:var(--rust);font-size:13px;font-weight:700;font-family:'Inter',sans-serif}
+.service-banner p{font-size:12px;color:var(--ink-soft);margin-top:2px}
+
+/* ════════════════════════════════════════════════════════
+   MODALS
+   ════════════════════════════════════════════════════════ */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:60;align-items:center;justify-content:center;padding:20px}
+.modal-bg.show{display:flex}
+.modal{background:var(--paper2);border:1px solid var(--line2);border-radius:var(--r-lg);width:100%;max-width:460px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 60px -12px rgba(0,0,0,.6)}
+.modal.wide{max-width:600px}
+.modal-head{display:flex;align-items:center;justify-content:space-between;padding:18px 22px;border-bottom:1px solid var(--line2)}
+.modal-head h3{font-size:16px;font-family:'Fraunces',serif;font-weight:600}
+.modal-close{background:none;border:none;font-size:18px;color:var(--ink-faint);cursor:pointer;padding:4px;border-radius:var(--r);transition:all .12s}
+.modal-close:hover{color:var(--ink);background:var(--paper3)}
+.modal-body{padding:22px}
+.modal-foot{display:flex;justify-content:flex-end;gap:10px;padding:16px 22px;border-top:1px solid var(--line2)}
+
+.oi{background:var(--paper2);border:1px solid var(--line2);border-radius:var(--r);padding:12px;margin-bottom:10px;display:flex;gap:10px;align-items:center}
+.oi select{flex:2}
+.oi input{flex:1;max-width:70px}
+.oi .oi-total{font-family:'JetBrains Mono',monospace;font-weight:700;font-size:13px;min-width:64px;text-align:right}
+.oi .oi-rm{flex-shrink:0}
+.add-item-btn{width:100%;background:none;border:1px dashed var(--line2);border-radius:var(--r);padding:10px;color:var(--ink-soft);font-size:12px;font-weight:600;margin-bottom:14px}
+.add-item-btn:hover{border-color:var(--sage);color:var(--sage-deep)}
+.order-total-row{display:flex;justify-content:space-between;align-items:baseline;padding:14px 0 0;border-top:1px solid var(--line2);margin-top:6px}
+.order-total-row .otl{font-family:'JetBrains Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-faint)}
+.order-total-row .otv{font-family:'JetBrains Mono',monospace;font-size:20px;font-weight:700;color:var(--sage-deep)}
+
+/* ════════════════════════════════════════════════════════
+   TOAST
+   ════════════════════════════════════════════════════════ */
+#toast{
+  position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--paper3);border:1px solid var(--line2);color:var(--ink);padding:12px 18px;border-radius:var(--r);
+  font-size:12px;font-weight:600;display:flex;align-items:center;gap:9px;z-index:80;
+  opacity:0;pointer-events:none;transition:all .25s ease;font-family:'Inter',sans-serif;
+  box-shadow:0 8px 24px rgba(0,0,0,.4);
+}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ════════════════════════════════════════════════════════
+   EINFÜHRUNGSTOUR
+   ════════════════════════════════════════════════════════ */
+.tour-spot{
+  display:none;position:fixed;z-index:90;
+  border:2px solid var(--sage);border-radius:var(--r-lg);
+  box-shadow:0 0 0 4000px rgba(0,0,0,.65), 0 0 0 4px var(--sage-bg);
+  transition:all .35s cubic-bezier(.4,0,.2,1);
+  pointer-events:none;
+}
+.tour-pop{
+  display:none;position:fixed;z-index:91;width:300px;max-width:88vw;
+  background:var(--paper2);border:1px solid var(--line2);border-radius:var(--r-lg);
+  padding:18px 20px;box-shadow:0 16px 40px rgba(0,0,0,.5);
+  transition:top .35s cubic-bezier(.4,0,.2,1),left .35s cubic-bezier(.4,0,.2,1);
+}
+.tour-eyebrow{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:600;color:var(--sage);text-transform:uppercase;letter-spacing:.1em;margin-bottom:8px}
+.tour-pop h3{font-size:15px;margin-bottom:6px}
+.tour-pop p{font-size:12px;color:var(--ink-soft);line-height:1.55;margin-bottom:16px}
+.tour-foot{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+/* ════════════════════════════════════════════════════════
+   UPDATE-BANNER (PWA)
+   ════════════════════════════════════════════════════════ */
+#update-banner{
+  display:none;position:fixed;left:0;right:0;bottom:0;z-index:95;
+  background:var(--paper2);border-top:1px solid var(--line2);
+  padding:14px 20px;padding-bottom:calc(14px + env(safe-area-inset-bottom));
+  align-items:center;justify-content:space-between;gap:14px;
+  box-shadow:0 -8px 24px rgba(0,0,0,.4);
+}
+#update-banner.show{display:flex}
+#update-banner .ub-text{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--ink)}
+#update-banner .ub-ic{font-size:16px}
+#update-banner .ub-sub{font-size:10px;color:var(--ink-faint);font-family:'JetBrains Mono',monospace}
+
+/* ════════════════════════════════════════════════════════
+   RESPONSIVE
+   ════════════════════════════════════════════════════════ */
+@media(max-width:860px){
+  .pg{grid-template-columns:1fr 1fr}
+  .kg{grid-template-columns:1fr 1fr}
+  .sg{grid-template-columns:1fr}
+  .stat-strip{grid-template-columns:1fr 1fr}
+  .stat-cell:nth-child(2){border-right:none}
+}
+@media(max-width:600px){
+  .topbrand{padding-left:16px;padding-right:16px}
+  .tb-user-info{display:none}
+  .main{padding:24px 16px 50px}
+  .pg{grid-template-columns:1fr}
+  .kg{grid-template-columns:1fr}
+  .stat-strip{grid-template-columns:1fr 1fr}
+  .dose-vals{gap:14px}
+  table{min-width:480px}
+  input,select,textarea{font-size:16px}
+  #update-banner{flex-direction:column;align-items:stretch;gap:12px}
+  #update-banner .btn{width:100%;justify-content:center}
+}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-wrap">
+    <div class="login-label">⟢ Verwaltungssystem</div>
+    <div class="login-brand">
+      <h1>Nicotine<span style="color:var(--sage)">Manager</span></h1>
+      <div class="sub">Bestand · Bestellungen · Dosierung</div>
+    </div>
+    <div class="login-card">
+      <div class="fw"><label class="fl">Benutzername</label><input id="inp-user" placeholder="admin" autocomplete="username"/></div>
+      <div class="fw"><label class="fl">Passwort</label><input type="password" id="inp-pw" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/></div>
+      <button class="primary-btn" onclick="doLogin()">Anmelden →</button>
+      <div class="login-err" id="login-err">Falscher Benutzername oder Passwort.</div>
+    </div>
+    <div class="login-hint">Standard: <b>admin / 1234</b></div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+
+  <div class="topbrand">
+    <div class="tb-left">
+      <div class="tb-mark">N</div>
+      <div class="tb-name">Nicotine<span>Manager</span></div>
+    </div>
+    <div class="tb-right">
+      <div class="tb-user">
+        <div class="tb-av" id="tb-av">A</div>
+        <div class="tb-user-info">
+          <div class="tb-user-name" id="tb-name">Admin</div>
+          <div class="tb-user-role" id="tb-role">Administrator</div>
+        </div>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">Abmelden</button>
+    </div>
+  </div>
+
+  <nav class="scalebar" id="scalebar">
+    <div class="scale-tick active" onclick="nav('dashboard')"><span class="tk-n">00</span><span class="tk-ic">◎</span>Übersicht</div>
+    <div class="scale-tick" onclick="nav('bestellungen')"><span class="tk-n">01</span><span class="tk-ic">▤</span>Bestellungen</div>
+    <div class="scale-tick" onclick="nav('kunden')"><span class="tk-n">02</span><span class="tk-ic">◐</span>Kunden</div>
+    <div class="scale-tick" onclick="nav('preise')"><span class="tk-n">03</span><span class="tk-ic">⚖</span>Preise</div>
+    <div class="scale-tick" onclick="nav('einstellungen')"><span class="tk-n">04</span><span class="tk-ic">⚙</span>Einstellungen</div>
+    <div class="scale-tick" style="display:none" onclick="nav('service')"><span class="tk-n">05</span><span class="tk-ic">✚</span>Service</div>
+  </nav>
+
+  <div class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="ph">
+        <div><div class="ph-eyebrow">Datenblatt · Echtzeit</div><div class="pt">Übersicht</div><div class="ps">Offene Schulden und ausstehende Bestellungen</div></div>
+      </div>
+      <div id="service-banner" style="display:none" class="service-banner">
+        <div class="sb-left">✚</div>
+        <div><h4>Service fällig</h4><p>Der jährliche Service steht an. Bitte den Service-Account kontaktieren.</p></div>
+      </div>
+
+      <div class="stat-strip">
+        <div class="stat-cell s-debt"><div class="sc-lab">Offene Schulden</div><div class="sc-v mono" id="d-schulden">0,00 €</div><div class="sc-sub" id="d-s-sub">0 offen</div></div>
+        <div class="stat-cell"><div class="sc-lab">Bestellungen</div><div class="sc-v mono" id="d-best">0</div><div class="sc-sub">gesamt</div></div>
+        <div class="stat-cell"><div class="sc-lab">Schuldner</div><div class="sc-v mono" id="d-schuldner">0</div><div class="sc-sub">Kunden mit offenem Betrag</div></div>
+        <div class="stat-cell"><div class="sc-lab">Kunden</div><div class="sc-v mono" id="d-kunden">0</div><div class="sc-sub">registriert</div></div>
+      </div>
+
+      <div class="dose-card">
+        <div class="dose-row">
+          <div class="dose-label">Größte Schuldner · Anteil an Gesamtschuld</div>
+          <div class="dose-vals" id="dose-vals-wrap"></div>
+        </div>
+        <div class="dose-track" id="dose-track-wrap"></div>
+        <div class="dose-ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div>
+      </div>
+
+      <div class="card">
+        <div class="card-head"><h3>Offene Bestellungen</h3><div style="display:flex;align-items:center;gap:10px"><span class="badge b-offen" id="d-count">0</span><button class="btn btn-ghost btn-sm" onclick="downloadOpenOrdersPDF()">⭳ PDF herunterladen</button></div></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Kunde</th><th>Produkte</th><th>Gesamt</th><th>Status</th></tr></thead><tbody id="d-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- BESTELLUNGEN -->
+    <div class="page" id="page-bestellungen">
+      <div class="ph">
+        <div><div class="ph-eyebrow">Protokoll</div><div class="pt">Bestellungen</div><div class="ps">Bestellungen anlegen und verwalten</div></div>
+        <div class="pa">
+          <button class="btn btn-ghost" onclick="downloadOpenOrdersPDF()">⭳ Offene als PDF</button>
+          <button class="btn btn-primary" onclick="openModal('bestellung')">＋ Neue Bestellung</button>
+        </div>
+      </div>
+      <div style="margin-bottom:16px;display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+        <select id="filter-kunde" onchange="renderBestellungen()" style="width:auto;min-width:180px"><option value="">Alle Kunden</option></select>
+        <select id="filter-status" onchange="renderBestellungen()" style="width:auto;min-width:150px">
+          <option value="offen">Offene Bestellungen</option>
+          <option value="alle">Alle anzeigen</option>
+          <option value="bezahlt">Nur bezahlte</option>
+        </select>
+      </div>
+      <div class="card">
+        <div class="tbl-wrap"><table><thead><tr><th>Kunde</th><th>Produkte</th><th>Datum</th><th>Gesamt</th><th>Status</th><th></th></tr></thead><tbody id="b-tbody"></tbody></table></div>
+      </div>
+      <div class="ec" id="b-empty" style="display:none">
+        <div class="ec-ic">▤</div>
+        <div class="ec-t">Keine Bestellungen</div>
+        <div class="ec-s">Lege eine neue Bestellung an, um zu starten.</div>
+      </div>
+    </div>
+
+    <!-- KUNDEN -->
+    <div class="page" id="page-kunden">
+      <div class="ph">
+        <div><div class="ph-eyebrow">Register</div><div class="pt">Kunden</div><div class="ps">Kundenstamm verwalten</div></div>
+        <div class="pa"><button class="btn btn-primary" onclick="openModal('kunde')">＋ Neuer Kunde</button></div>
+      </div>
+      <div class="kg" id="kunden-grid"></div>
+      <div class="ec" id="kunden-empty" style="display:none">
+        <div class="ec-ic">◐</div>
+        <div class="ec-t">Noch keine Kunden</div>
+        <div class="ec-s">Lege deinen ersten Kunden an.</div>
+      </div>
+    </div>
+
+    <!-- PREISE -->
+    <div class="page" id="page-preise">
+      <div class="ph"><div><div class="ph-eyebrow">Beipackzettel</div><div class="pt">Preise</div><div class="ps">Stückpreise für alle Produkte</div></div></div>
+      <div class="pg" id="price-grid"></div>
+      <div class="card"><div class="card-head"><h3>Preisübersicht</h3></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Produkt</th><th>Stückpreis</th><th>10×</th><th>25×</th><th>50×</th><th>100×</th></tr></thead><tbody id="price-table"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- EINSTELLUNGEN -->
+    <div class="page" id="page-einstellungen">
+      <div class="ph"><div><div class="ph-eyebrow">Konfiguration</div><div class="pt">Einstellungen</div><div class="ps">App konfigurieren und Konto verwalten</div></div></div>
+      <div class="sg" style="margin-bottom:16px" id="set-row-1">
+        <div class="set-card" id="set-card-konto">
+          <div class="sch"><div class="sch-ic">◐</div><div><h3>Mein Konto</h3><p>Benutzername & Passwort</p></div></div>
+          <div class="scb">
+            <div style="margin-bottom:12px"><label class="fl">Benutzername</label><input id="set-user" disabled style="opacity:.6;cursor:not-allowed"/></div>
+            <div style="margin-bottom:12px"><label class="fl">Neues Passwort</label><input type="password" id="set-pw1" placeholder="Leer = nicht ändern"/></div>
+            <div style="margin-bottom:14px"><label class="fl">Bestätigen</label><input type="password" id="set-pw2" placeholder="Wiederholen"/></div>
+            <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary btn-sm" onclick="saveAccount()">Speichern</button></div>
+          </div>
+        </div>
+        <div class="set-card" id="set-card-anzeige">
+          <div class="sch"><div class="sch-ic">◑</div><div><h3>Anzeige</h3><p>Design anpassen</p></div></div>
+          <div class="scb">
+            <div class="sr"><div><div class="sr-label">Animationen</div><div class="sr-sub">Seitenübergänge</div></div><label class="toggle"><input type="checkbox" id="set-anim" checked onchange="applyViz()"><div class="tt"></div></label></div>
+            <div class="sr"><div><div class="sr-label">Kompakte Ansicht</div><div class="sr-sub">Weniger Abstände</div></div><label class="toggle"><input type="checkbox" id="set-compact" onchange="applyViz()"><div class="tt"></div></label></div>
+            <div style="padding-top:12px"><div class="sr-label" style="margin-bottom:9px">Akzentfarbe</div><div class="theme-grid" id="theme-grid"></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="sg" style="margin-bottom:16px" id="set-row-2">
+        <div class="set-card" id="set-card-benutzer">
+          <div class="sch"><div class="sch-ic">◒</div><div><h3>Benutzer</h3><p>Zugänge verwalten</p></div></div>
+          <div class="scb">
+            <div id="user-list"></div>
+            <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:8px">
+              <div class="sr-label" style="margin-bottom:9px">Neuer Benutzer</div>
+              <div class="mr2" style="margin-bottom:8px"><input id="nu-name" placeholder="Benutzername"/><input type="password" id="nu-pw" placeholder="Passwort"/></div>
+              <div style="margin-bottom:10px"><label class="fl" style="margin-bottom:5px">Rolle</label>
+                <select id="nu-role"><option value="user">Benutzer</option><option value="admin">Administrator</option><option value="service">Service-Account</option></select>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="addUser()" style="width:100%;justify-content:center">＋ Benutzer anlegen</button>
+            </div>
+          </div>
+        </div>
+        <div class="set-card" id="set-card-backup">
+          <div class="sch"><div class="sch-ic">◓</div><div><h3>Daten & Backup</h3><p>Export und Import</p></div></div>
+          <div class="scb">
+            <div class="sr"><div><div class="sr-label">Exportieren</div><div class="sr-sub">JSON-Datei herunterladen</div></div><button class="btn btn-ghost btn-sm" onclick="exportData()">↓ Export</button></div>
+            <div class="sr"><div><div class="sr-label">Importieren</div><div class="sr-sub">Backup wiederherstellen</div></div><button class="btn btn-ghost btn-sm" onclick="document.getElementById('imp-file').click()">↑ Import</button><input type="file" id="imp-file" accept=".json" style="display:none" onchange="importData(event)"></div>
+            <div class="sr" style="border-bottom:none"><div><div class="sr-label">Statistik</div><div class="sr-sub" id="set-stat">Wird geladen…</div></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="set-card sg full" style="margin-bottom:16px" id="set-card-about">
+        <div class="sch"><div class="sch-ic">ℹ</div><div><h3>Über die App</h3><p>Version und Infos</p></div></div>
+        <div class="scb">
+          <div class="about-row"><span>App-Name</span><span>NicotineManager</span></div>
+          <div class="about-row"><span>Version</span><span>1.0.0</span></div>
+          <div class="about-row"><span>Speicher</span><span>localStorage (Browser)</span></div>
+          <div class="about-row"><span>Einführung</span><span><button class="btn btn-ghost btn-sm" onclick="startTour()">Tour erneut starten</button></span></div>
+        </div>
+      </div>
+      <div class="danger-zone" id="set-card-danger">
+        <h3>Gefahrenzone</h3>
+        <p>Diese Aktionen können nicht rückgängig gemacht werden.</p>
+        <div class="danger-actions">
+          <button class="btn btn-danger btn-sm" onclick="clearOrders()">Alle Bestellungen löschen</button>
+          <button class="btn btn-danger btn-sm" onclick="clearAll()">Alles zurücksetzen</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SERVICE -->
+    <div class="page" id="page-service">
+      <div class="ph"><div><div class="ph-eyebrow">Wartung</div><div class="pt">Service</div><div class="ps">Jährlichen Service verwalten</div></div></div>
+      <div class="card">
+        <div class="card-head"><h3>Service-Status</h3></div>
+        <div class="scb" style="padding:18px 20px">
+          <div class="about-row"><span>Letzter Service</span><span id="svc-last">—</span></div>
+          <div class="about-row"><span>Nächster Service fällig</span><span id="svc-next">—</span></div>
+          <div class="about-row"><span>Status</span><span id="svc-status">—</span></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Service durchführen</h3></div>
+        <div class="scb" style="padding:20px;display:grid;gap:14px">
+          <div><label class="fl" style="margin-bottom:6px">Service-Notiz (optional)</label><textarea id="svc-note" rows="3" placeholder="z.B. Systemprüfung, Updates…" style="resize:vertical"></textarea></div>
+          <div class="about-row" style="border-bottom:none"><span>Service-Account</span><span id="svc-who" style="color:var(--gold)">—</span></div>
+          <div style="display:flex;justify-content:flex-end"><button class="btn btn-primary" onclick="doService()">✓ Service jetzt ausführen</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h3>Service-Verlauf</h3></div>
+        <div class="tbl-wrap"><table><thead><tr><th>Datum</th><th>Durchgeführt von</th><th>Notiz</th></tr></thead><tbody id="svc-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- MODAL: Neuer Kunde -->
+<div class="modal-bg" id="modal-kunde">
+  <div class="modal">
+    <div class="modal-head"><h3>Neuer Kunde</h3><button class="modal-close" onclick="closeModal('kunde')">✕</button></div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px"><label class="fl">Vorname</label><input id="nk-vorname" placeholder="Max"/></div>
+      <div><label class="fl">Nachname</label><input id="nk-nachname" placeholder="Mustermann"/></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('kunde')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="addKunde()">Kunde anlegen</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Neue Bestellung -->
+<div class="modal-bg" id="modal-bestellung">
+  <div class="modal wide">
+    <div class="modal-head"><h3>Neue Bestellung</h3><button class="modal-close" onclick="closeModal('bestellung')">✕</button></div>
+    <div class="modal-body">
+      <div style="margin-bottom:16px"><label class="fl">Kunde</label><select id="nb-kunde"></select></div>
+      <label class="fl" style="margin-bottom:8px">Produkte</label>
+      <div id="order-items"></div>
+      <button class="add-item-btn" onclick="addOrderItem()">＋ Produkt hinzufügen</button>
+
+      <div style="border-top:1px solid var(--line);padding-top:14px;margin-top:4px">
+        <label class="fl" style="margin-bottom:8px">Rabatt (optional)</label>
+        <div style="display:flex;gap:8px;margin-bottom:4px">
+          <select id="discount-type" onchange="onDiscountTypeChange()" style="flex:1">
+            <option value="">Kein Rabatt</option>
+            <option value="percent">Prozent (%)</option>
+            <option value="fixed">Fester Betrag (€)</option>
+          </select>
+          <input type="number" id="discount-value" min="0" step="0.01" placeholder="0" oninput="renderOrderItems()" style="flex:1" disabled/>
+        </div>
+      </div>
+
+      <div class="order-total-row" style="border-top:none;padding-top:8px" id="subtotal-row">
+        <span class="otl">Zwischensumme</span><span class="otv mono" id="order-subtotal" style="font-size:13px;color:var(--ink-soft)">0,00 €</span>
+      </div>
+      <div class="order-total-row" id="discount-row" style="display:none">
+        <span class="otl" style="color:var(--rust)">Rabatt</span><span class="otv mono" id="order-discount" style="font-size:13px;color:var(--rust)">−0,00 €</span>
+      </div>
+      <div class="order-total-row"><span class="otl">Gesamtbetrag</span><span class="otv mono" id="order-total">0,00 €</span></div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-ghost" onclick="closeModal('bestellung')">Abbrechen</button>
+      <button class="btn btn-primary" onclick="addBestellung()">Bestellung anlegen</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Passwort ändern (erstes Login) -->
+<div class="modal-bg" id="modal-pw">
+  <div class="modal">
+    <div class="modal-head"><h3>Passwort festlegen</h3></div>
+    <div class="modal-body">
+      <p style="font-size:12px;color:var(--ink-soft);margin-bottom:16px">Beim ersten Login bitte ein eigenes Passwort vergeben.</p>
+      <div style="margin-bottom:6px"><label class="fl">Neues Passwort</label><input type="password" id="pw-new" oninput="checkStr()" placeholder="Mind. 4 Zeichen"/></div>
+      <div style="height:4px;background:var(--line);border-radius:99px;overflow:hidden;margin-bottom:14px"><div id="str-bar" style="height:100%;width:0;background:var(--line2);transition:.2s"></div></div>
+      <div><label class="fl">Wiederholen</label><input type="password" id="pw-rep" placeholder="Passwort wiederholen"/></div>
+      <div class="login-err" id="pw-err" style="margin-top:12px">Passwörter stimmen nicht überein oder zu kurz.</div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn btn-primary" onclick="savePw()">Speichern</button>
+    </div>
+  </div>
+</div>
+
+<!-- EINFÜHRUNGSTOUR -->
+<div id="tour-spot" class="tour-spot"></div>
+<div id="tour" class="tour-pop">
+  <div class="tour-eyebrow">Einführung <span id="tour-n">1</span> / <span id="tour-total">5</span></div>
+  <h3 id="tour-title">Willkommen</h3>
+  <p id="tour-text">Text</p>
+  <div class="tour-foot">
+    <button class="btn btn-ghost btn-sm" onclick="endTour()">Überspringen</button>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-ghost btn-sm" id="tour-back" onclick="tourStep(-1)">← Zurück</button>
+      <button class="btn btn-primary btn-sm" id="tour-next" onclick="tourStep(1)">Weiter →</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"><span id="t-icon">✓</span><span id="t-msg"></span></div>
+
+<div id="update-banner">
+  <div class="ub-text">
+    <span class="ub-ic">⟲</span>
+    <div><div>Update verfügbar</div><div class="ub-sub">Neue Version von NicotineManager</div></div>
+  </div>
+  <button class="btn btn-primary btn-sm" onclick="applyUpdate()">Jetzt aktualisieren</button>
+</div>
+
+<script>
+// ══════════════════════════════════════════════
+// PRODUKTE
+// ══════════════════════════════════════════════
+const PRODUCTS = [
+  {id:'pods',    name:'Pods',         icon:'💊'},
+  {id:'snus',    name:'Snus',         icon:'🟢'},
+  {id:'vapes',   name:'Vapes',        icon:'💨'},
+  {id:'einweg',  name:'Einweg Vape',  icon:'🔋'},
+  {id:'schupf',  name:'Schupftabak',  icon:'🟤'},
+  {id:'ziga',    name:'Zigaretten',   icon:'🚬'},
+];
+const PROD_MAP = {};
+PRODUCTS.forEach(p => PROD_MAP[p.id] = p);
+
+const THEMES = [
+  {name:'Azur',   accent:'#4C8DFF', accentDeep:'#8FB6FF', accentBg:'#162338', sec:['#D4AC5C','#7DD3C8','#C792EA']},
+  {name:'Bernstein', accent:'#E0B868', accentDeep:'#F0D199', accentBg:'#2E2614', sec:['#4C8DFF','#7DD3C8','#E08A6B']},
+  {name:'Smaragd', accent:'#4CC38A', accentDeep:'#8FE0B8', accentBg:'#13291F', sec:['#D4AC5C','#4C8DFF','#C792EA']},
+  {name:'Magenta', accent:'#C792EA', accentDeep:'#DEB8F5', accentBg:'#241B30', sec:['#D4AC5C','#4C8DFF','#7DD3C8']},
+];
+
+// ══════════════════════════════════════════════
+// SUPABASE CLIENT
+// ══════════════════════════════════════════════
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
+const EMAIL_DOMAIN = 'nicotinemanager.local'; // interner Trick: Benutzername -> Fake-E-Mail für Supabase Auth
+const toEmail = u => `${u.toLowerCase()}@${EMAIL_DOMAIN}`;
+
+// ══════════════════════════════════════════════
+// STATE (im Speicher, wird per Supabase befüllt/synchronisiert)
+// ══════════════════════════════════════════════
+let S = { kunden:[], bestellungen:[], preise:{} };
+let M = { profile:null, users:[], service:{history:[], lastDate:null, nextDue:null, due:false} };
+let VS = JSON.parse(localStorage.getItem('nm_vis')||'null') || {themeIdx:0,anim:true,compact:false};
+let currentUser = null;   // Anzeigename (z.B. "admin")
+let currentUserId = null; // Supabase auth.users UUID
+
+const saveVis = () => localStorage.setItem('nm_vis', JSON.stringify(VS));
+const fmt = n => Number(n).toFixed(2).replace('.',',') + ' €';
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+const today = () => new Date().toISOString().slice(0,10);
+const fmtDate = d => d ? new Date(d).toLocaleDateString('de-DE') : '—';
+
+// ══════════════════════════════════════════════
+// ROLLEN-RECHTE
+// admin -> nur Benutzerverwaltung, service -> nur Service.
+// Gilt gleich auf Desktop und Handy.
+// ══════════════════════════════════════════════
+function currentRole(){ return M.profile ? M.profile.role : 'user'; }
+function allowedPages(role){
+  if(role==='admin') return ['einstellungen'];
+  if(role==='service') return ['service'];
+  return ['dashboard','bestellungen','kunden','preise','einstellungen']; // 'user'
+}
+function canSeePage(id){ return allowedPages(currentRole()).includes(id); }
+function homePage(){ return allowedPages(currentRole())[0]; }
+
+// ══════════════════════════════════════════════
+// AUTH
+// ══════════════════════════════════════════════
+async function doLogin(){
+  const u = document.getElementById('inp-user').value.trim();
+  const p = document.getElementById('inp-pw').value;
+  if(!u||!p){ document.getElementById('login-err').style.display='block'; return; }
+  const btn = document.querySelector('.primary-btn');
+  btn.disabled=true; btn.style.opacity=.6;
+  const { data, error } = await sb.auth.signInWithPassword({ email: toEmail(u), password: p });
+  btn.disabled=false; btn.style.opacity=1;
+  if(error || !data.user){
+    document.getElementById('login-err').textContent='Falscher Benutzername oder Passwort.';
+    document.getElementById('login-err').style.display='block';
+    document.getElementById('inp-pw').value='';
+    return;
+  }
+  await onLoggedIn(data.user, u);
+}
+async function onLoggedIn(authUser, displayName){
+  currentUserId = authUser.id;
+  const { data: prof, error: profErr } = await sb.from('profiles').select('*').eq('id', authUser.id).single();
+  if(profErr || !prof){
+    showToast('Profil konnte nicht geladen werden. Admin kontaktieren.','⚠');
+    await sb.auth.signOut();
+    return;
+  }
+  M.profile = prof;
+  currentUser = prof.username || displayName || authUser.email.split('@')[0];
+
+  document.getElementById('login-err').style.display='none';
+  document.getElementById('tb-av').textContent=currentUser[0].toUpperCase();
+  document.getElementById('tb-name').textContent=cap(currentUser);
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+
+  await loadAllData();
+  applyTheme(VS.themeIdx);
+  applyRoleUI();
+  checkServiceDue();
+  nav(homePage());
+  // Nur normale Benutzer ('user') werden beim ersten Login zur Passwortänderung
+  // aufgefordert; direkt danach folgt die Einführungstour. Admin/Service nie.
+  if(prof.role==='user' && prof.first_login) openModal('pw');
+}
+async function doLogout(){
+  await sb.auth.signOut();
+  document.getElementById('app-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('inp-pw').value='';
+  currentUser=null; currentUserId=null; M.profile=null;
+}
+
+// ══════════════════════════════════════════════
+// DATEN LADEN (aus Supabase)
+// ══════════════════════════════════════════════
+async function loadAllData(){
+  const [kundenRes, bestRes, preiseRes, usersRes, svcStatusRes, svcLogRes] = await Promise.all([
+    sb.from('kunden').select('*').order('created_at'),
+    sb.from('bestellungen').select('*').order('id', {ascending:false}),
+    sb.from('preise').select('*'),
+    sb.from('profiles').select('*').order('created_at'),
+    sb.from('service_status').select('*').eq('user_id', currentUserId).maybeSingle(),
+    sb.from('service_log').select('*').order('service_date', {ascending:false}),
+  ]);
+  S.kunden = (kundenRes.data||[]).map(k=>({id:k.id, vorname:k.vorname, nachname:k.nachname}));
+  S.bestellungen = (bestRes.data||[]).map(b=>({
+    id:b.id, kId:b.kunde_id, items:b.items, subtotal:Number(b.subtotal),
+    discountType:b.discount_type, discountValue:b.discount_value?Number(b.discount_value):0,
+    total:Number(b.total), paid:b.paid, date:b.bestelldatum
+  }));
+  S.preise = {};
+  (preiseRes.data||[]).forEach(p=>{ S.preise[p.produkt_id]=Number(p.preis); });
+  M.users = usersRes.data||[];
+  if(svcStatusRes.data){
+    M.service.lastDate = svcStatusRes.data.last_date;
+    M.service.nextDue = svcStatusRes.data.next_due;
+    M.service.due = svcStatusRes.data.due;
+  }
+  M.service.history = (svcLogRes.data||[]).map(h=>({date:h.service_date, by:h.done_by, note:h.note}));
+}
+
+// ══════════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════════
+const PAGE_NAMES={dashboard:'Übersicht',bestellungen:'Bestellungen',kunden:'Kunden',preise:'Preise',einstellungen:'Einstellungen',service:'Service'};
+const NAV_IDS=['dashboard','bestellungen','kunden','preise','einstellungen','service'];
+function nav(id){
+  if(!canSeePage(id)) id=homePage();
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.scale-tick').forEach(n=>n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.scale-tick')[NAV_IDS.indexOf(id)]?.classList.add('active');
+  if(id==='einstellungen') renderSettings();
+  if(id==='service') renderService();
+  refresh();
+}
+
+// ══════════════════════════════════════════════
+// ROLLEN-UI
+// ══════════════════════════════════════════════
+function applyRoleUI(){
+  const role=currentRole();
+  document.getElementById('tb-role').textContent=role==='service'?'Service-Account':role==='admin'?'Administrator':'Benutzer';
+  const allowed=allowedPages(role);
+  document.querySelectorAll('.scale-tick').forEach((el,i)=>{
+    el.style.display = allowed.includes(NAV_IDS[i]) ? 'flex' : 'none';
+  });
+}
+
+// ══════════════════════════════════════════════
+// PW CHANGE
+// ══════════════════════════════════════════════
+function checkStr(){
+  const v=document.getElementById('pw-new').value;
+  const bar=document.getElementById('str-bar');
+  let s=0;
+  if(v.length>=4)s++;if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9!@#$%]/.test(v))s++;
+  const cols=['var(--line2)','var(--rust)','var(--gold)','var(--sage)','var(--sage)'];
+  const ws=['0%','25%','50%','75%','100%'];
+  bar.style.background=cols[s];bar.style.width=ws[s];
+}
+async function savePw(){
+  const n=document.getElementById('pw-new').value;
+  const r=document.getElementById('pw-rep').value;
+  const err=document.getElementById('pw-err');
+  if(n.length<4||n!==r){err.style.display='block';return;}
+  err.style.display='none';
+  const { error: pwErr } = await sb.auth.updateUser({ password: n });
+  if(pwErr){ showToast('Passwort konnte nicht geändert werden.','⚠'); return; }
+  await sb.from('profiles').update({ first_login:false }).eq('id', currentUserId);
+  M.profile.first_login=false;
+  closeModal('pw');
+  document.getElementById('pw-new').value='';
+  document.getElementById('pw-rep').value='';
+  showToast('Passwort gespeichert. ✓');
+  startTour();
+}
+
+// ══════════════════════════════════════════════
+// MODALS
+// ══════════════════════════════════════════════
+function openModal(id){
+  document.getElementById('modal-'+id).classList.add('show');
+  if(id==='bestellung'){
+    orderItems=[]; addOrderItem(); fillSelects();
+    document.getElementById('discount-type').value='';
+    document.getElementById('discount-value').value='';
+    document.getElementById('discount-value').disabled=true;
+    renderOrderItems();
+  }
+}
+function closeModal(id){ document.getElementById('modal-'+id).classList.remove('show'); }
+
+// ══════════════════════════════════════════════
+// THEME
+// ══════════════════════════════════════════════
+function applyTheme(i){
+  VS.themeIdx=i;
+  const t=THEMES[i];
+  const root=document.documentElement.style;
+  root.setProperty('--sage', t.accent);
+  root.setProperty('--sage-deep', t.accentDeep);
+  root.setProperty('--sage-bg', t.accentBg);
+  root.setProperty('--accent2', t.sec[0]);
+  root.setProperty('--accent3', t.sec[1]);
+  root.setProperty('--accent4', t.sec[2]);
+  saveVis();
+}
+
+// ══════════════════════════════════════════════
+// PREISE
+// ══════════════════════════════════════════════
+function renderPrices(){
+  const grid=document.getElementById('price-grid');
+  if(grid) grid.innerHTML=PRODUCTS.map(p=>`
+    <div class="pc">
+      <div class="pc-eyebrow">Wirkstoff · ${p.id}</div>
+      <div class="pc-name"><span class="pc-ic">${p.icon}</span>${p.name}</div>
+      <div class="pc-val mono" id="pp-${p.id}">${fmt(S.preise[p.id]||0)}</div>
+      <div class="pc-edit">
+        <input type="number" id="pi-${p.id}" value="${(S.preise[p.id]||0).toFixed(2)}" step="0.01" min="0" placeholder="Preis"/>
+        <button class="btn btn-ghost btn-sm" onclick="savePrice('${p.id}')">Speichern</button>
+      </div>
+    </div>`).join('');
+  const tbl=document.getElementById('price-table');
+  if(tbl) tbl.innerHTML=PRODUCTS.map(p=>`
+    <tr><td style="font-weight:600">${p.icon} ${p.name}</td>
+    <td class="mono" style="font-weight:700">${fmt(S.preise[p.id]||0)}</td>
+    <td class="mono">${fmt((S.preise[p.id]||0)*10)}</td>
+    <td class="mono">${fmt((S.preise[p.id]||0)*25)}</td>
+    <td class="mono">${fmt((S.preise[p.id]||0)*50)}</td>
+    <td class="mono">${fmt((S.preise[p.id]||0)*100)}</td></tr>`).join('');
+}
+async function savePrice(id){
+  const v=parseFloat(document.getElementById('pi-'+id).value);
+  if(isNaN(v)||v<0){showToast('Ungültiger Preis.','⚠');return;}
+  // upsert auf (user_id, produkt_id) — user_id kommt automatisch von RLS/auth.uid()
+  const { error } = await sb.from('preise').upsert(
+    { user_id:currentUserId, produkt_id:id, preis:v },
+    { onConflict:'user_id,produkt_id' }
+  );
+  if(error){ showToast('Preis konnte nicht gespeichert werden.','⚠'); return; }
+  S.preise[id]=v;renderPrices();showToast('Preis gespeichert.');
+}
+
+// ══════════════════════════════════════════════
+// KUNDEN
+// ══════════════════════════════════════════════
+async function addKunde(){
+  const v=document.getElementById('nk-vorname').value.trim();
+  const n=document.getElementById('nk-nachname').value.trim();
+  if(!v||!n){showToast('Vor- und Nachname eingeben.','⚠');return;}
+  const { data, error } = await sb.from('kunden').insert({ user_id:currentUserId, vorname:v, nachname:n }).select().single();
+  if(error){ showToast('Kunde konnte nicht angelegt werden.','⚠'); return; }
+  S.kunden.push({id:data.id, vorname:data.vorname, nachname:data.nachname});
+  document.getElementById('nk-vorname').value='';document.getElementById('nk-nachname').value='';
+  closeModal('kunde');renderKunden();fillSelects();showToast('Kunde angelegt.');
+}
+async function delKunde(id){
+  if(!confirm('Kunden wirklich löschen? Alle zugehörigen Bestellungen werden ebenfalls entfernt.'))return;
+  const { error } = await sb.from('kunden').delete().eq('id', id);
+  if(error){ showToast('Löschen fehlgeschlagen.','⚠'); return; }
+  S.kunden=S.kunden.filter(k=>k.id!==id);
+  S.bestellungen=S.bestellungen.filter(b=>b.kId!==id); // löscht Supabase per on-delete-cascade mit, hier nur lokaler Stand
+  renderKunden();renderBestellungen();fillSelects();showToast('Kunde gelöscht.','🗑');
+}
+function renderKunden(){
+  const g=document.getElementById('kunden-grid'),em=document.getElementById('kunden-empty');
+  if(!g)return;
+  if(!S.kunden.length){g.innerHTML='';em.style.display='block';return;}
+  em.style.display='none';
+  g.innerHTML=S.kunden.map(k=>{
+    const debt=S.bestellungen.filter(b=>b.kId===k.id&&!b.paid).reduce((s,b)=>s+b.total,0);
+    const cnt=S.bestellungen.filter(b=>b.kId===k.id).length;
+    return `<div class="kcard">
+      <div class="kc-top"><div class="kc-name">${k.vorname} ${k.nachname}</div><button class="ic-btn" onclick="delKunde(${k.id})">🗑</button></div>
+      <div class="kc-stats">
+        <div><div class="kc-stat-lab">Bestellungen</div><div class="kc-stat-v mono">${cnt}</div></div>
+        <div><div class="kc-stat-lab">Offen</div><div class="kc-stat-v mono ${debt>0?'debt':''}">${fmt(debt)}</div></div>
+      </div>
+    </div>`;
+  }).join('');
+}
+function fillSelects(){
+  const opts=S.kunden.map(k=>`<option value="${k.id}">${k.vorname} ${k.nachname}</option>`).join('');
+  const fk=document.getElementById('filter-kunde');
+  if(fk) fk.innerHTML='<option value="">Alle Kunden</option>'+opts;
+  const nb=document.getElementById('nb-kunde');
+  if(nb) nb.innerHTML=opts || '<option value="">Keine Kunden vorhanden</option>';
+}
+
+// ══════════════════════════════════════════════
+// BESTELLUNGEN (Order-Builder im Modal)
+// ══════════════════════════════════════════════
+let orderItems=[];
+function addOrderItem(){
+  orderItems.push({uid:Date.now()+Math.random(),prod:PRODUCTS[0].id,stueck:1});
+  renderOrderItems();
+}
+function removeOrderItem(uid){
+  orderItems=orderItems.filter(it=>it.uid!==uid);
+  renderOrderItems();
+}
+function updateOrderItem(uid,field,val){
+  const it=orderItems.find(x=>x.uid===uid);
+  if(!it)return;
+  it[field]=field==='stueck'?Math.max(1,parseInt(val)||1):val;
+  renderOrderItems();
+}
+function onDiscountTypeChange(){
+  const type=document.getElementById('discount-type').value;
+  const valInput=document.getElementById('discount-value');
+  valInput.disabled = !type;
+  if(!type) valInput.value='';
+  else if(type==='percent') valInput.max=100;
+  else valInput.removeAttribute('max');
+  renderOrderItems();
+}
+function calcOrderTotals(){
+  const subtotal=orderItems.reduce((s,it)=>s+(S.preise[it.prod]||0)*(it.stueck||1),0);
+  const dType=document.getElementById('discount-type')?.value||'';
+  const dValRaw=parseFloat(document.getElementById('discount-value')?.value)||0;
+  let discountAmount=0;
+  if(dType==='percent') discountAmount = subtotal * Math.min(Math.max(dValRaw,0),100) / 100;
+  else if(dType==='fixed') discountAmount = Math.min(Math.max(dValRaw,0), subtotal);
+  const total = Math.max(0, subtotal - discountAmount);
+  return { subtotal, dType, dValRaw, discountAmount, total };
+}
+function renderOrderItems(){
+  const wrap=document.getElementById('order-items');
+  if(!wrap)return;
+  wrap.innerHTML=orderItems.map(it=>{
+    const sub=fmt((S.preise[it.prod]||0)*(it.stueck||1));
+    return `<div class="oi">
+      <select onchange="updateOrderItem(${it.uid},'prod',this.value)">
+        ${PRODUCTS.map(p=>`<option value="${p.id}"${p.id===it.prod?' selected':''}>${p.icon} ${p.name} — ${fmt(S.preise[p.id]||0)}</option>`).join('')}
+      </select>
+      <input type="number" min="1" value="${it.stueck}" onchange="updateOrderItem(${it.uid},'stueck',this.value)"/>
+      <div class="oi-total mono">${sub}</div>
+      <button class="ic-btn oi-rm" onclick="removeOrderItem(${it.uid})">✕</button>
+    </div>`;
+  }).join('');
+  const { subtotal, discountAmount, total } = calcOrderTotals();
+  document.getElementById('order-subtotal').textContent=fmt(subtotal);
+  const discRow=document.getElementById('discount-row');
+  if(discountAmount>0){
+    discRow.style.display='flex';
+    document.getElementById('order-discount').textContent='−'+fmt(discountAmount);
+  } else {
+    discRow.style.display='none';
+  }
+  document.getElementById('order-total').textContent=fmt(total);
+}
+async function addBestellung(){
+  const kId=parseInt(document.getElementById('nb-kunde').value);
+  if(!kId){showToast('Bitte einen Kunden auswählen.','⚠');return;}
+  if(!orderItems.length){showToast('Mindestens ein Produkt hinzufügen.','⚠');return;}
+  const items=orderItems.map(it=>({prod:it.prod,stueck:it.stueck||1,preis:S.preise[it.prod]||0,sub:(S.preise[it.prod]||0)*(it.stueck||1)}));
+  const { subtotal, dType, dValRaw, discountAmount, total } = calcOrderTotals();
+  const { data, error } = await sb.from('bestellungen').insert({
+    user_id:currentUserId, kunde_id:kId, items, subtotal,
+    discount_type: dType || null, discount_value: dType ? dValRaw : 0,
+    total, paid:false, bestelldatum: today()
+  }).select().single();
+  if(error){ showToast('Bestellung konnte nicht angelegt werden.','⚠'); return; }
+  S.bestellungen.unshift({
+    id:data.id, kId:data.kunde_id, items:data.items, subtotal:Number(data.subtotal),
+    discountType:data.discount_type, discountValue:Number(data.discount_value||0),
+    total:Number(data.total), paid:data.paid, date:data.bestelldatum
+  });
+  closeModal('bestellung');renderBestellungen();renderKunden();renderDashboard();showToast('Bestellung angelegt.');
+}
+async function togglePaid(id){
+  const b=S.bestellungen.find(x=>x.id===id);
+  if(!b)return;
+  const newPaid=!b.paid;
+  const { error } = await sb.from('bestellungen').update({ paid:newPaid }).eq('id', id);
+  if(error){ showToast('Status konnte nicht geändert werden.','⚠'); return; }
+  b.paid=newPaid;renderBestellungen();renderKunden();renderDashboard();
+  showToast(b.paid?'Als bezahlt markiert. ✓':'Als offen markiert.');
+}
+async function delBestellung(id){
+  if(!confirm('Bestellung wirklich löschen?'))return;
+  const { error } = await sb.from('bestellungen').delete().eq('id', id);
+  if(error){ showToast('Löschen fehlgeschlagen.','⚠'); return; }
+  S.bestellungen=S.bestellungen.filter(x=>x.id!==id);
+  renderBestellungen();renderKunden();renderDashboard();showToast('Bestellung gelöscht.','🗑');
+}
+function renderBestellungen(){
+  const tbody=document.getElementById('b-tbody'),empty=document.getElementById('b-empty');
+  if(!tbody)return;
+  const fk=document.getElementById('filter-kunde')?.value||'';
+  const fs=document.getElementById('filter-status')?.value||'offen';
+  let list=[...S.bestellungen];
+  if(fk) list=list.filter(b=>String(b.kId)===fk);
+  if(fs==='offen') list=list.filter(b=>!b.paid);
+  if(fs==='bezahlt') list=list.filter(b=>b.paid);
+  list.sort((a,b)=>b.id-a.id);
+  if(!list.length){tbody.innerHTML='';empty.style.display='block';return;}
+  empty.style.display='none';
+  tbody.innerHTML=list.map(b=>{
+    const k=S.kunden.find(x=>x.id===b.kId);
+    const prods=b.items.map(it=>{const p=PROD_MAP[it.prod];return p?`${p.icon} ${it.stueck}×`:''}).join(' &nbsp; ');
+    const discBadge = b.discountType ? `<span class="badge" style="background:var(--gold-bg);color:var(--gold);margin-left:6px">${b.discountType==='percent'?'-'+b.discountValue+'%':'-'+fmt(b.discountValue)}</span>` : '';
+    return `<tr>
+      <td style="font-weight:600">${k?k.vorname+' '+k.nachname:'—'}</td>
+      <td style="font-size:12px">${prods}</td>
+      <td class="mono" style="color:var(--ink-faint);font-size:12px">${fmtDate(b.date)}</td>
+      <td class="mono" style="font-weight:700">${fmt(b.total)}${discBadge}</td>
+      <td>${b.paid?'<span class="badge b-bezahlt">Bezahlt</span>':'<span class="badge b-offen">Offen</span>'}</td>
+      <td style="text-align:right;white-space:nowrap">
+        ${!b.paid?`<button class="pay-btn" onclick="togglePaid(${b.id})">✓ Bezahlt</button>`:`<button class="btn btn-ghost btn-sm" onclick="togglePaid(${b.id})">↺ Offen</button>`}
+        <button class="ic-btn" onclick="delBestellung(${b.id})">🗑</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════
+// DASHBOARD
+// ══════════════════════════════════════════════
+function renderDashboard(){
+  const open=S.bestellungen.filter(b=>!b.paid);
+  const debt=open.reduce((s,b)=>s+b.total,0);
+
+  // Schulden pro Kunde ermitteln
+  const debtByKunde={};
+  open.forEach(b=>{ debtByKunde[b.kId]=(debtByKunde[b.kId]||0)+b.total; });
+  const schuldnerIds=Object.keys(debtByKunde).filter(id=>debtByKunde[id]>0);
+
+  document.getElementById('d-schulden').textContent=fmt(debt);
+  document.getElementById('d-s-sub').textContent=`${open.length} offen`;
+  document.getElementById('d-best').textContent=S.bestellungen.length;
+  document.getElementById('d-schuldner').textContent=schuldnerIds.length;
+  document.getElementById('d-kunden').textContent=S.kunden.length;
+  document.getElementById('d-count').textContent=open.length;
+
+  // Top-Schuldner-Skala: gestapelte Anteile der größten Schuldner an der Gesamtschuld
+  const ranked=schuldnerIds
+    .map(id=>({kId:id, sum:debtByKunde[id], k:S.kunden.find(k=>String(k.id)===String(id))}))
+    .sort((a,b)=>b.sum-a.sum);
+  const top=ranked.slice(0,4);
+  const restSum=ranked.slice(4).reduce((s,r)=>s+r.sum,0);
+  const segColors=['var(--rust)','var(--accent2)','var(--accent3)','var(--accent4)'];
+  const valsWrap=document.getElementById('dose-vals-wrap');
+  const trackWrap=document.getElementById('dose-track-wrap');
+  if(!debt){
+    valsWrap.innerHTML=`<span style="color:var(--ink-faint);font-family:'JetBrains Mono',monospace;font-size:12px">Keine offenen Schulden</span>`;
+    trackWrap.innerHTML='';
+  } else {
+    valsWrap.innerHTML=top.map((r,i)=>{
+      const name=r.k?`${r.k.vorname} ${r.k.nachname}`:'Unbekannt';
+      return `<span style="color:${segColors[i]}">${name} ${fmt(r.sum)}</span>`;
+    }).join('') + (restSum>0?`<span style="color:var(--ink-faint)">Übrige ${fmt(restSum)}</span>`:'');
+    let segs='', leftAcc=0;
+    top.forEach((r,i)=>{
+      const pct=(r.sum/debt*100);
+      segs+=`<div class="dose-fill-seg" style="left:${leftAcc}%;width:${pct}%;background:${segColors[i]}"></div>`;
+      leftAcc+=pct;
+    });
+    if(restSum>0){
+      const pct=(restSum/debt*100);
+      segs+=`<div class="dose-fill-seg" style="left:${leftAcc}%;width:${pct}%;background:var(--line2)"></div>`;
+    }
+    trackWrap.innerHTML=segs;
+  }
+
+  const recent=[...open].sort((a,b)=>b.id-a.id).slice(0,10);
+  const tbody=document.getElementById('d-tbody');
+  if(!recent.length){tbody.innerHTML=`<tr><td colspan="4" class="ec"><div class="ec-ic">✓</div><div class="ec-t">Keine offenen Bestellungen</div></td></tr>`;}
+  else tbody.innerHTML=recent.map(b=>{
+    const k=S.kunden.find(x=>x.id===b.kId);
+    const prods=b.items.map(it=>{const p=PROD_MAP[it.prod];return p?`${p.icon} ${it.stueck}×`:''}).join(' &nbsp; ');
+    return `<tr><td style="font-weight:600">${k?k.vorname+' '+k.nachname:'—'}</td><td style="font-size:12px">${prods}</td><td class="mono" style="font-weight:700">${fmt(b.total)}</td><td><span class="badge b-offen">Offen</span></td></tr>`;
+  }).join('');
+  document.getElementById('service-banner').style.display=M.service.due?'flex':'none';
+}
+
+// ══════════════════════════════════════════════
+// PDF-EXPORT: Offene Bestellungen
+// ══════════════════════════════════════════════
+function downloadOpenOrdersPDF(){
+  const open=[...S.bestellungen].filter(b=>!b.paid).sort((a,b)=>b.id-a.id);
+  if(!open.length){showToast('Keine offenen Bestellungen vorhanden.','⚠');return;}
+  if(typeof window.jspdf==='undefined'){showToast('PDF-Modul konnte nicht geladen werden.','⚠');return;}
+
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit:'mm', format:'a4' });
+  const pageW = doc.internal.pageSize.getWidth();
+  const margin = 16;
+
+  // Kopfzeile: Logo-Kreis + Titel
+  doc.setDrawColor(20,20,20);
+  doc.setLineWidth(0.6);
+  doc.circle(margin+4, 16, 4.2, 'S');
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(11);
+  doc.text('N', margin+4, 17.3, {align:'center'});
+  doc.setFontSize(15);
+  doc.text('NicotineManager', margin+12, 15.5);
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(9);
+  doc.setTextColor(110,110,110);
+  doc.text(`Offene Bestellungen · Stand ${fmtDate(today())}`, margin+12, 20.5);
+  doc.setDrawColor(20,20,20);
+  doc.setLineWidth(0.5);
+  doc.line(margin, 26, pageW-margin, 26);
+
+  // Tabelle
+  const rows = open.map(b=>{
+    const k=S.kunden.find(x=>x.id===b.kId);
+    const prods=b.items.map(it=>{const p=PROD_MAP[it.prod];return p?`${p.name} ×${it.stueck}`:''}).join(', ');
+    const rabatt = b.discountType ? (b.discountType==='percent' ? `-${b.discountValue}%` : `-${fmt(b.discountValue)}`) : '—';
+    return [k?`${k.vorname} ${k.nachname}`:'—', prods, fmtDate(b.date), rabatt, fmt(b.total)];
+  });
+  doc.autoTable({
+    head:[['Kunde','Produkte','Datum','Rabatt','Betrag']],
+    body:rows,
+    startY:32,
+    margin:{left:margin, right:margin},
+    styles:{font:'helvetica', fontSize:9, textColor:[20,20,20], cellPadding:3},
+    headStyles:{fillColor:[235,235,235], textColor:[60,60,60], fontStyle:'bold', fontSize:8},
+    columnStyles:{3:{halign:'right'}, 4:{halign:'right', fontStyle:'bold'}},
+    alternateRowStyles:{fillColor:[248,248,248]},
+  });
+
+  // Gesamtsumme
+  const total=open.reduce((s,b)=>s+b.total,0);
+  const finalY = doc.lastAutoTable.finalY + 10;
+  doc.setDrawColor(20,20,20);
+  doc.setLineWidth(0.5);
+  doc.line(margin, finalY-6, pageW-margin, finalY-6);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(12);
+  doc.setTextColor(20,20,20);
+  doc.text('Gesamt offen', margin, finalY);
+  doc.text(fmt(total), pageW-margin, finalY, {align:'right'});
+
+  // Fußzeile
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(8);
+  doc.setTextColor(140,140,140);
+  doc.text(`Erstellt mit NicotineManager am ${new Date().toLocaleString('de-DE')}`, margin, doc.internal.pageSize.getHeight()-10);
+
+  doc.save(`offene-bestellungen-${today()}.pdf`);
+  showToast('PDF wird heruntergeladen. ⭳');
+}
+
+// ══════════════════════════════════════════════
+// SERVICE
+// ══════════════════════════════════════════════
+async function checkServiceDue(){
+  const svc=M.service;
+  if(!svc.nextDue){
+    const d=new Date(); d.setFullYear(d.getFullYear()+1);
+    const nextDue=d.toISOString().slice(0,10);
+    await sb.from('service_status').upsert({ user_id:currentUserId, next_due:nextDue, due:false });
+    svc.nextDue=nextDue; svc.due=false;
+    return;
+  }
+  const due = today() >= svc.nextDue;
+  if(due !== svc.due){
+    await sb.from('service_status').upsert({ user_id:currentUserId, due, next_due:svc.nextDue });
+  }
+  svc.due=due;
+}
+async function doService(){
+  if(currentRole()!=='service'){showToast('Nur Service-Accounts können den Service durchführen.','⚠');return;}
+  const note=document.getElementById('svc-note').value.trim() || 'Kein Kommentar';
+  const d=today();
+  const next=new Date(); next.setFullYear(next.getFullYear()+1);
+  const nextDue=next.toISOString().slice(0,10);
+  const { error: logErr } = await sb.from('service_log').insert({ user_id:currentUserId, service_date:d, done_by:currentUser, note });
+  const { error: statusErr } = await sb.from('service_status').upsert({ user_id:currentUserId, last_date:d, next_due:nextDue, due:false });
+  if(logErr||statusErr){ showToast('Service konnte nicht gespeichert werden.','⚠'); return; }
+  M.service.history.unshift({date:d,by:currentUser,note});
+  M.service.lastDate=d; M.service.nextDue=nextDue; M.service.due=false;
+  document.getElementById('svc-note').value='';
+  renderService();
+  showToast('Service erfolgreich durchgeführt! ✓');
+}
+function renderService(){
+  document.getElementById('svc-who').textContent=currentUser+' ('+currentRole()+')';
+  document.getElementById('svc-last').textContent=fmtDate(M.service.lastDate);
+  document.getElementById('svc-next').textContent=fmtDate(M.service.nextDue);
+  const due=M.service.due;
+  document.getElementById('svc-status').innerHTML=due?'<span class="badge b-offen">Fällig</span>':'<span class="badge b-bezahlt">Aktuell</span>';
+  const hist=M.service.history;
+  const tbody=document.getElementById('svc-tbody');
+  if(!hist.length){tbody.innerHTML=`<tr><td colspan="3" class="ec">Noch kein Service durchgeführt.</td></tr>`;}
+  else tbody.innerHTML=hist.map(h=>`<tr><td class="mono">${fmtDate(h.date)}</td><td style="font-weight:600">${h.by}</td><td style="color:var(--ink-soft)">${h.note}</td></tr>`).join('');
+}
+
+// ══════════════════════════════════════════════
+// EINSTELLUNGEN / BENUTZER
+// ══════════════════════════════════════════════
+function applyViz(){
+  VS.anim=document.getElementById('set-anim')?.checked??true;
+  VS.compact=document.getElementById('set-compact')?.checked??false;
+  document.querySelectorAll('.page').forEach(p=>p.style.animation=VS.anim?'':'none');
+  document.querySelectorAll('td,th').forEach(el=>el.style.padding=VS.compact?'8px 16px':'');
+  saveVis();
+}
+function renderSettings(){
+  document.getElementById('set-user').value=currentUser||'';
+  const an=document.getElementById('set-anim');if(an)an.checked=VS.anim;
+  const co=document.getElementById('set-compact');if(co)co.checked=VS.compact;
+  const tg=document.getElementById('theme-grid');
+  if(tg) tg.innerHTML=THEMES.map((t,i)=>`<div class="t-d ${i===VS.themeIdx?'on':''}" style="background:${t.accent}" onclick="applyTheme(${i})" title="${t.name}"></div>`).join('');
+  renderUserList();
+  document.getElementById('set-stat').textContent=`${S.kunden.length} Kunden · ${S.bestellungen.length} Bestellungen · ${M.users.length} Benutzer`;
+  // Karten je nach Rolle ein-/ausblenden (gleich auf Desktop und Handy).
+  const role=currentRole();
+  const isAdmin=role==='admin';
+  ['set-card-konto','set-card-anzeige','set-card-backup','set-card-about','set-card-danger'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display = isAdmin ? 'none' : '';
+  });
+  const userCard=document.getElementById('set-card-benutzer');
+  if(userCard) userCard.style.display = isAdmin ? '' : 'none';
+}
+function renderUserList(){
+  const el=document.getElementById('user-list');if(!el)return;
+  el.innerHTML=M.users.map(u=>`
+    <div class="ul-item">
+      <div class="ul-av">${u.username[0].toUpperCase()}</div>
+      <div class="ul-info"><div class="ul-name">${u.username}</div><div class="ul-role">${u.role==='service'?'Service':u.role==='admin'?'Admin':'Benutzer'}${u.id===currentUserId?' (du)':''}</div></div>
+      ${u.id!==currentUserId?`<button class="ic-btn" onclick="delUser('${u.id}','${u.username}')">🗑</button>`:'<span style="font-size:10px;color:var(--sage)">●</span>'}
+    </div>`).join('');
+}
+async function addUser(){
+  const n=document.getElementById('nu-name').value.trim();
+  const p=document.getElementById('nu-pw').value;
+  const r=document.getElementById('nu-role').value;
+  if(!n||p.length<3){showToast('Name + Passwort (≥3 Zeichen) eingeben.','⚠');return;}
+  const { data, error } = await sb.rpc('create_app_user', { p_username:n, p_password:p, p_role:r });
+  if(error){ showToast(error.message || 'Benutzer konnte nicht angelegt werden.', '⚠'); return; }
+  M.users.push({ id:data, username:n, role:r, first_login:r==='user' });
+  document.getElementById('nu-name').value='';document.getElementById('nu-pw').value='';
+  renderUserList();showToast('Benutzer angelegt.');
+}
+async function delUser(id, name){
+  if(!confirm(`Benutzer "${name}" löschen?`))return;
+  const { error } = await sb.rpc('delete_app_user', { p_user_id:id });
+  if(error){ showToast(error.message || 'Löschen fehlgeschlagen.', '⚠'); return; }
+  M.users=M.users.filter(u=>u.id!==id);renderUserList();showToast('Benutzer gelöscht.','🗑');
+}
+async function saveAccount(){
+  const p1=document.getElementById('set-pw1').value;
+  const p2=document.getElementById('set-pw2').value;
+  if(!p1 && !p2){ showToast('Kein neues Passwort eingegeben.', '⚠'); return; }
+  if(p1!==p2){showToast('Passwörter stimmen nicht überein.','⚠');return;}
+  if(p1.length<3){showToast('Passwort ≥3 Zeichen.','⚠');return;}
+  const { error } = await sb.auth.updateUser({ password:p1 });
+  if(error){ showToast('Passwort konnte nicht geändert werden.','⚠'); return; }
+  document.getElementById('set-pw1').value='';document.getElementById('set-pw2').value='';
+  showToast('Passwort gespeichert. ✓');
+}
+function exportData(){
+  const blob=new Blob([JSON.stringify({state:S, service:M.service, exported:new Date().toISOString()},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nicotinemanager-backup-'+today()+'.json';a.click();
+  showToast('Export heruntergeladen. ↓');
+}
+function importData(e){
+  showToast('Import ist mit der Online-Datenbank derzeit nicht verfügbar. Daten direkt in Supabase einspielen.', '⚠');
+  e.target.value='';
+}
+async function clearOrders(){
+  if(!confirm('Wirklich ALLE Bestellungen aus der Datenbank löschen? Das betrifft alle Geräte/Benutzer.'))return;
+  const { error } = await sb.from('bestellungen').delete().neq('id', -1); // alle Zeilen
+  if(error){ showToast('Löschen fehlgeschlagen.','⚠'); return; }
+  S.bestellungen=[];refresh();showToast('Bestellungen gelöscht.','🗑');
+}
+async function clearAll(){
+  if(!confirm('Wirklich ALLES zurücksetzen (Bestellungen + Kunden)? Das betrifft alle Geräte/Benutzer und kann nicht rückgängig gemacht werden.'))return;
+  const [r1, r2] = await Promise.all([
+    sb.from('bestellungen').delete().neq('id', -1),
+    sb.from('kunden').delete().neq('id', -1),
+  ]);
+  if(r1.error||r2.error){ showToast('Zurücksetzen fehlgeschlagen.','⚠'); return; }
+  S.kunden=[]; S.bestellungen=[];refresh();showToast('Zurückgesetzt.','💥');
+}
+
+// ══════════════════════════════════════════════
+// EINFÜHRUNGSTOUR
+// Nur für Rolle 'user', einmalig nach dem ersten Passwortwechsel.
+// ══════════════════════════════════════════════
+const TOUR_STEPS=[
+  {page:'dashboard', target:'.stat-strip', title:'Deine Übersicht', text:'Hier siehst du auf einen Blick die offenen Schulden, Bestellungen und wie viele Kunden noch etwas schulden.'},
+  {page:'dashboard', target:'.dose-card',  title:'Größte Schuldner', text:'Dieser Balken zeigt, welche Kunden den größten Anteil an der Gesamtschuld haben.'},
+  {page:'bestellungen', target:'.pa',      title:'Neue Bestellung', text:'Über diesen Button legst du eine neue Bestellung an: Kunde wählen, Produkte hinzufügen, fertig.'},
+  {page:'kunden', target:'.pa',            title:'Kundenverwaltung', text:'Hier legst du Kunden an und siehst direkt, wer noch offene Beträge hat.'},
+  {page:'preise', target:'.pg',            title:'Preise pflegen', text:'Stückpreise für jedes Produkt lassen sich hier jederzeit anpassen.'},
+  {page:'einstellungen', target:'#set-card-konto', title:'Dein Konto', text:'Unter Einstellungen kannst du jederzeit Benutzername, Passwort und das Design anpassen. Viel Erfolg!'},
+];
+let tourIdx=0;
+function startTour(){
+  if(currentRole()!=='user') return; // Tour ist exklusiv für normale Benutzer
+  tourIdx=0;
+  document.getElementById('tour-total').textContent=TOUR_STEPS.length;
+  renderTourStep();
+}
+function tourStep(dir){
+  tourIdx+=dir;
+  if(tourIdx<0)tourIdx=0;
+  if(tourIdx>=TOUR_STEPS.length){endTour();return;}
+  renderTourStep();
+}
+function renderTourStep(){
+  const s=TOUR_STEPS[tourIdx];
+  nav(s.page);
+  document.getElementById('tour-n').textContent=tourIdx+1;
+  document.getElementById('tour-title').textContent=s.title;
+  document.getElementById('tour-text').textContent=s.text;
+  document.getElementById('tour-back').style.visibility=tourIdx===0?'hidden':'visible';
+  document.getElementById('tour-next').textContent=tourIdx===TOUR_STEPS.length-1?'Fertig ✓':'Weiter →';
+  // Positionierung verzögern, bis die Seite (inkl. .active Klasse / Layout) gerendert ist
+  requestAnimationFrame(()=>requestAnimationFrame(()=>positionTour(s.target)));
+}
+function positionTour(sel){
+  const el=document.querySelector(sel);
+  const spot=document.getElementById('tour-spot');
+  const pop=document.getElementById('tour');
+  if(!el){ spot.style.display='none'; pop.style.display='block'; pop.style.top='50%'; pop.style.left='50%'; pop.style.transform='translate(-50%,-50%)'; return; }
+  pop.style.transform='none';
+  const r=el.getBoundingClientRect();
+  const pad=8;
+  spot.style.display='block';
+  spot.style.top=(r.top-pad)+'px';
+  spot.style.left=(r.left-pad)+'px';
+  spot.style.width=(r.width+pad*2)+'px';
+  spot.style.height=(r.height+pad*2)+'px';
+  pop.style.display='block';
+  const popW=300, popH=pop.offsetHeight||180;
+  let top=r.bottom+pad+14;
+  let left=Math.min(Math.max(16,r.left), window.innerWidth-popW-16);
+  if(top+popH>window.innerHeight-16){ top=Math.max(16,r.top-popH-14); }
+  pop.style.top=top+'px';
+  pop.style.left=left+'px';
+}
+function endTour(){
+  document.getElementById('tour-spot').style.display='none';
+  document.getElementById('tour').style.display='none';
+}
+window.addEventListener('resize', ()=>{
+  if(document.getElementById('tour').style.display==='block') positionTour(TOUR_STEPS[tourIdx].target);
+});
+
+// ══════════════════════════════════════════════
+// TOAST
+// ══════════════════════════════════════════════
+let toastT;
+function showToast(msg,icon='✓'){
+  document.getElementById('t-msg').textContent=msg;document.getElementById('t-icon').textContent=icon;
+  const t=document.getElementById('toast');t.classList.add('show');
+  clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800);
+}
+
+// ══════════════════════════════════════════════
+// REFRESH
+// ══════════════════════════════════════════════
+function refresh(){
+  fillSelects();renderPrices();renderKunden();renderBestellungen();renderDashboard();
+}
+
+applyTheme(VS.themeIdx); // Theme schon vor Login anwenden (z.B. für die Login-Seite selbst)
+
+// ══════════════════════════════════════════════
+// SESSION-CHECK BEIM START
+// Falls bereits eine gültige Supabase-Sitzung existiert
+// (z.B. Seite neu geladen), direkt einloggen statt erneut
+// nach Benutzername/Passwort zu fragen.
+// ══════════════════════════════════════════════
+(async () => {
+  const { data } = await sb.auth.getSession();
+  if(data.session && data.session.user){
+    const guessedName = data.session.user.email.split('@')[0];
+    await onLoggedIn(data.session.user, guessedName);
+  }
+})();
+
+// ══════════════════════════════════════════════
+// PWA: SERVICE WORKER + UPDATES
+// ══════════════════════════════════════════════
+let waitingWorker=null;
+if('serviceWorker' in navigator){
+  window.addEventListener('load', ()=>{
+    navigator.serviceWorker.register('sw.js').then(reg=>{
+      // Bereits ein wartender Worker beim Laden? (z.B. Tab war offen, Update kam dazwischen)
+      if(reg.waiting) showUpdateBanner(reg.waiting);
+      reg.addEventListener('updatefound', ()=>{
+        const nw=reg.installing;
+        if(!nw)return;
+        nw.addEventListener('statechange', ()=>{
+          if(nw.state==='installed' && navigator.serviceWorker.controller){
+            showUpdateBanner(nw);
+          }
+        });
+      });
+      // Periodisch auf neue Version prüfen (z.B. beim erneuten Fokussieren der App)
+      document.addEventListener('visibilitychange', ()=>{
+        if(document.visibilityState==='visible') reg.update();
+      });
+    }).catch(()=>{ /* Service Worker konnte nicht registriert werden, App läuft trotzdem online weiter */ });
+  });
+  // Wenn der neue Worker übernimmt, Seite einmalig neu laden, um die neue Version zu zeigen
+  let reloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange', ()=>{
+    if(reloaded)return; reloaded=true;
+    window.location.reload();
+  });
+}
+function showUpdateBanner(worker){
+  waitingWorker=worker;
+  document.getElementById('update-banner').classList.add('show');
+}
+function applyUpdate(){
+  if(waitingWorker) waitingWorker.postMessage('SKIP_WAITING');
+  document.getElementById('update-banner').classList.remove('show');
+}
+</script>
+
+</body>
+</html>
